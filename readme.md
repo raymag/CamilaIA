@@ -1,0 +1,1 @@
+execute o arquivo main.py, para acessar a IA.
