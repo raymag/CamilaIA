@@ -4,6 +4,7 @@
 import json as js
 import random as r
 import webbrowser as wb
+import requests as re
 neo = {}
 file = ''
 m = open('links.json', 'r')
@@ -62,18 +63,78 @@ class Machine():
             js.dump(self.phrases, m)
             m.close()
 
+      def distance(self):
+            key = 'AIzaSyBvWaDxcuEnSzxC6I6UdDd6sePr7F4zHAQ'
+            source = input('--< Origem: ').lower()
+            destiny = input('--< Destino: ').lower()
+            source = source.replace(' ', '+')
+            source = source.replace(', ', ',')
+            destiny = destiny.replace(' ', '+')
+            destiny = destiny.replace(', ', ',')
+            url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins={}&destinations={}&key={}'
+            url = url.format(source, destiny, key)
+            urlJson = re.get(url)
+            urlJson = urlJson.json()
+            try:
+                  distance = urlJson['rows'][0]['elements'][0]['distance']['text']
+                  duration = urlJson['rows'][0]['elements'][0]['duration']['text']
+                  duration = duration.replace('hours', 'horas')
+                  duration = duration.replace('mins', 'minutos')
+            except:
+                  return '--< Algo errado aconteceu... Tente de novo!'
+            return 'Cerca de '+distance+' e aproximadamente '+duration
+
+      def distancia(self, phrase):
+            if '?' in phrase:
+                        phrase = phrase.split('?')[0]
+            phrase = phrase.replace('até', 'ate')
+            phrase = phrase.split('de')
+            source = phrase[1].split('ate')[0]
+            destiny = phrase[1].split('ate')[1]
+            key = 'AIzaSyBvWaDxcuEnSzxC6I6UdDd6sePr7F4zHAQ'
+            source = source.replace(' ', '+')
+            source = source.replace(', ', ',')
+            destiny = destiny.replace(' ', '+')
+            destiny = destiny.replace(', ', ',')
+            url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins={}&destinations={}&key={}'
+            url = url.format(source, destiny, key)
+            urlJson = re.get(url)
+            urlJson = urlJson.json()
+            try:
+                  distance = urlJson['rows'][0]['elements'][0]['distance']['text']
+                  duration = urlJson['rows'][0]['elements'][0]['duration']['text']
+                  duration = duration.replace('hours', 'horas')
+                  duration = duration.replace('mins', 'minutos')
+                  duration = duration.replace('days', 'dias')
+                  duration = duration.replace('day', 'dia')
+            except:
+                  return '--< Ocorreu um erro, fale de novo! '
+            return 'Cerca de '+distance+' e aproximadamente '+duration
+
+      def twi(self):
+            search = 'https://api.twitter.com/1.1/search/tweets.json?q={}'
+            hashtag = input('--< Pesquisar por? ')
+            hashtag = hashtag.replace('#', '%23')
+            search = search.format(hashtag)
+            x = re.get(search).json()
+            return x
+      
       def think(self, phrase): #Função que processa as strings do usuário e encontra uma resposta
             global neo
             global file
+            phrase = phrase.replace('distância', 'distancia')
             if phrase in self.phrases:
                   return '--< ' + self.phrases[phrase]
+            
             if self.history[-1] == '--< Como se chama?':
                   name = self.takeName(phrase)
                   phrase = self.answerName(name)
                   return phrase
+            
             if 'hey' in phrase or 'iae' in phrase or 'eae' in phrase or 'oie' in phrase:
                   print('--< Olá! Me chamo ' + self.name)
                   return '--< Como se chama?'
+            
             if 'if: ' in  phrase: #Serve para o cálculo de Indicativo de Fuso
                   x = phrase.split('if: ')
                   x = x[1]
@@ -86,6 +147,7 @@ class Machine():
                   if side == 'w':
                         IF = IF*(-1)
                   return '--< ' + str(int(IF))
+            
             if 'if = ' in  phrase: #Também calcula o Indicativo de Fuso
                   x = phrase.split('if = ')
                   x = x[1]
@@ -98,11 +160,13 @@ class Machine():
                   if side == 'w':
                         IF = IF*(-1)
                   return '--< ' + str(int(IF))
+            
             if phrase == 'dh': #Calculo da diferença horária entre dois pontos
                   IFa = int(input('--< Indicativo do ponto A: '))
                   IFb = int(input('--< Indicativo do ponto B: '))
                   DH = IFb - IFa
                   return 'DH = ' + str(DH)
+            
             if phrase == 'hb': #Calculo da hora em um ponto B por um ponto A
                   DH = int(input('--< Diferença Horária: '))
                   hour = int(input('--< Hora em A (Horas apenas) : '))
@@ -125,6 +189,7 @@ class Machine():
             elif 'ouça' in phrase: #Isto chamará a função que permite à IA aprender novas frases
                  self.learn()
                  return '--< Certo!'
+
             elif 'crie' in phrase: #Informa a IA para criar um novo arquivo .json
                   phrase = phrase.split('crie ')
                   file = phrase[1]
@@ -132,6 +197,12 @@ class Machine():
                   m.close()
                   neo = {}
                   return '--< Arquivo criado. '
+            
+            elif 'distancia' in phrase and 'de' in phrase:
+                  return self.distancia(phrase)
+            
+            elif phrase == 'distance': #DISTANCEIA ==============
+                  return self.distance()
             elif 'record' in phrase: #Salva novos valores em um dicionário em um arquivo .json
                   x = phrase.split('record ')
                   file = x[1]
@@ -160,11 +231,14 @@ class Machine():
                   elif element == 'he':
                         return '1s²'
                   return '--< não reconheço este elemento...'
+            elif phrase == 'twi':
+                  return self.twi()
             elif 'abra =' in phrase: #Informa a IA para abrir determinado site
                   site = phrase.split('abra = ')[1]
                   if site in lLinks:
                         wb.open(lLinks[site])
                         return '--< Feito.'
+            
                   else:
                         print('--< Não reconheço este endereço') #Caso ela não reconhecer o site, ela pedirá o endereço
                         place = input('--< Informe o Link: ')
